@@ -6,11 +6,19 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: "#4361EE",
+        tabBarStyle: {
+          backgroundColor: "#242832",
+          borderTopColor: "#242832",
+        },
+        headerStyle: { backgroundColor: "#242832" },
+        headerTintColor: "#ffffff",
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
+          headerTitle: "Backloggd",
+          headerTitleStyle: { fontSize: 24, fontWeight: 800 },
           title: "Home",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
