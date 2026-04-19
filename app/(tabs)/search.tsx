@@ -22,6 +22,32 @@ type TwitchGame = {
   platformName?: string;
 };
 
+function truncateText(value?: string, maxLength = 30, fallback = "Unknown") {
+  if (!value || !value.trim()) {
+    return fallback;
+  }
+
+  const trimmed = value.trim();
+  if (trimmed.length <= maxLength) {
+    return trimmed;
+  }
+
+  return `${trimmed.slice(0, maxLength - 1)}...`;
+}
+
+function firstListItem(value?: string) {
+  if (!value) {
+    return undefined;
+  }
+
+  const first = value
+    .split(",")
+    .map((part) => part.trim())
+    .find(Boolean);
+
+  return first || undefined;
+}
+
 export default function Index() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<TwitchGame[]>([]);
@@ -77,14 +103,27 @@ export default function Index() {
               <Text style={styles.releaseYear}>
                 {(game.releaseDate ?? "").slice(0, 4) || "Unknown year"}
               </Text>
+              <Text style={styles.genreTag} numberOfLines={1}>
+                {truncateText(game.genreName, 40, "Unknown genre")}
+              </Text>
             </View>
 
             <View style={styles.resultInfoGroup}>
-              <Text style={styles.resultMeta}>
-                Publisher: {game.publisherName ?? "Unknown publisher"}
+              <Text style={styles.resultMeta} numberOfLines={1}>
+                Publisher:{" "}
+                {truncateText(
+                  firstListItem(game.publisherName),
+                  28,
+                  "Unknown publisher",
+                )}
               </Text>
-              <Text style={styles.resultMeta}>
-                Developer: {game.developerName ?? "Unknown developer"}
+              <Text style={styles.resultMeta} numberOfLines={1}>
+                Developer:{" "}
+                {truncateText(
+                  firstListItem(game.developerName),
+                  28,
+                  "Unknown developer",
+                )}
               </Text>
             </View>
 
@@ -163,6 +202,19 @@ const styles = StyleSheet.create({
     color: "#c7cedb",
     fontSize: 12,
     fontWeight: "400",
+    marginBottom: 6,
+  },
+  genreTag: {
+    alignSelf: "flex-start",
+    color: "#d9e6ff",
+    backgroundColor: "#25344d",
+    borderColor: "#36527f",
+    borderWidth: 1,
+    borderRadius: 999,
+    fontSize: 11,
+    fontWeight: "600",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
   resultTextColumn: {
     flex: 1,
