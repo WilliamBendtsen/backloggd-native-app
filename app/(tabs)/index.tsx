@@ -1,77 +1,196 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+
+import { searchTwitchGames } from "../../lib/twitchProxy";
 
 type Section = {
   title: string;
-  items: string[];
+  query: string;
 };
+
+type GameCard = {
+  id?: number | string;
+  name?: string;
+  coverUrl?: string;
+};
+
+type LoadedSection = {
+  title: string;
+  items: GameCard[];
+};
+
+type UserStats = {
+  played: number;
+  playing: number;
+  reviewed: number;
+  backlog: number;
+};
+
+type RatingBucket = {
+  label: string;
+  value: number;
+};
+
+const USER_PLACEHOLDER = "Player";
+
+const USER_STATS: UserStats = {
+  played: 128,
+  playing: 6,
+  reviewed: 52,
+  backlog: 73,
+};
+
+const RATING_BUCKETS: RatingBucket[] = [
+  { label: "1★", value: 4 },
+  { label: "2★", value: 9 },
+  { label: "3★", value: 28 },
+  { label: "4★", value: 40 },
+  { label: "5★", value: 19 },
+];
 
 const SECTIONS: Section[] = [
   {
     title: "Recently Trending",
-    items: [
-      "Dune: Part Two",
-      "Challengers",
-      "Civil War",
-      "The Fall Guy",
-      "Love Lies Bleeding",
-      "Poor Things",
-    ],
-  },
-  {
-    title: "Coming Soon",
-    items: [
-      "Mickey 17",
-      "Nosferatu",
-      "Furiosa",
-      "Gladiator II",
-      "Wicked",
-      "Joker: Folie a Deux",
-    ],
-  },
-  {
-    title: "Recently Anticipated",
-    items: [
-      "The Brutalist",
-      "Anora",
-      "The Substance",
-      "The Zone of Interest",
-      "Kinds of Kindness",
-      "May December",
-    ],
-  },
-  {
-    title: "Sleeper Hits",
-    items: [
-      "Bottoms",
-      "Past Lives",
-      "Perfect Days",
-      "Rye Lane",
-      "How to Blow Up a Pipeline",
-      "Hundreds of Beavers",
-    ],
+    query: "feed:trending",
   },
 ];
 
 export default function Index() {
+  const [sections, setSections] = useState<LoadedSection[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadSections() {
+      setIsLoading(true);
+      setErrorMessage(null);
+
+      try {
+        const loaded = await Promise.all(
+          SECTIONS.map(async (section) => {
+            const items = await searchTwitchGames(section.query);
+            return {
+              title: section.title,
+              items: items.slice(0, 10),
+            };
+          }),
+        );
+
+        setSections(loaded);
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Failed to load home sections";
+        setErrorMessage(message);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadSections();
+  }, []);
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
-      {SECTIONS.map((section) => (
-        <View key={section.title} style={styles.section}>
-          <Text style={styles.sectionTitle}>{section.title}</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {section.items.map((item) => (
-              <View key={`${section.title}-${item}`} style={styles.card}>
-                <View style={styles.poster}>
-                  <Text style={styles.posterLabel}>Poster</Text>
-                </View>
-                <Text numberOfLines={2} style={styles.cardTitle}>
-                  {item}
-                </Text>
-              </View>
-            ))}
-          </ScrollView>
+      <View style={styles.heroCard}>
+        <Text style={styles.heroTitle}>
+          Hello {USER_PLACEHOLDER}, your collection awaits...
+        </Text>
+        <Text style={styles.heroSubtitle}>
+          Pick up where you left off and keep your backlog moving.
+        </Text>
+      </View>
+
+      <View style={styles.statsCard}>
+        <Text style={styles.statsHeading}>Your Snapshot</Text>
+
+        <View style={styles.statGrid}>
+          <View style={styles.statBox}>
+            <Text style={styles.statValue}>{USER_STATS.played}</Text>
+            <Text style={styles.statLabel}>Played</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statValue}>{USER_STATS.playing}</Text>
+            <Text style={styles.statLabel}>Playing</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statValue}>{USER_STATS.reviewed}</Text>
+            <Text style={styles.statLabel}>Reviewed</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statValue}>{USER_STATS.backlog}</Text>
+            <Text style={styles.statLabel}>Backlog</Text>
+          </View>
         </View>
-      ))}
+
+        <Text style={styles.chartHeading}>Ratings Distribution</Text>
+        <View style={styles.chartWrap}>
+          {RATING_BUCKETS.map((bucket) => (
+            <View key={bucket.label} style={styles.chartColumn}>
+              <View style={styles.chartTrack}>
+                <View
+                  style={[styles.chartBar, { height: `${bucket.value}%` }]}
+                />
+              </View>
+              <Text style={styles.chartLabel}>{bucket.label}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {isLoading && (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator color="#80a3ff" />
+          <Text style={styles.loadingText}>Loading sections...</Text>
+        </View>
+      )}
+
+      {errorMessage ? (
+        <Text style={styles.errorText}>{errorMessage}</Text>
+      ) : null}
+
+      {!isLoading &&
+        sections.map((section) => (
+          <View key={section.title} style={styles.section}>
+            <Text style={styles.sectionTitle}>{section.title}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {section.items.length === 0 ? (
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyCardText}>No games found yet</Text>
+                </View>
+              ) : (
+                section.items.map((item) => (
+                  <View
+                    key={`${section.title}-${item.id ?? item.name}`}
+                    style={styles.card}
+                  >
+                    <View style={styles.poster}>
+                      {item.coverUrl ? (
+                        <Image
+                          source={{ uri: item.coverUrl }}
+                          style={styles.posterImage}
+                        />
+                      ) : (
+                        <Text style={styles.posterLabel}>No image</Text>
+                      )}
+                    </View>
+                    <Text numberOfLines={2} style={styles.cardTitle}>
+                      {item.name ?? "Untitled"}
+                    </Text>
+                  </View>
+                ))
+              )}
+            </ScrollView>
+          </View>
+        ))}
     </ScrollView>
   );
 }
@@ -82,8 +201,120 @@ const styles = StyleSheet.create({
     backgroundColor: "#16181c",
   },
   container: {
-    paddingVertical: 18,
+    paddingVertical: 14,
     paddingBottom: 26,
+  },
+  heroCard: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 14,
+    padding: 14,
+    backgroundColor: "#1f2f4a",
+    borderWidth: 1,
+    borderColor: "#2d456d",
+  },
+  heroTitle: {
+    color: "#f4f7ff",
+    fontSize: 19,
+    fontWeight: "800",
+    marginBottom: 6,
+  },
+  heroSubtitle: {
+    color: "#b8c4dc",
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  statsCard: {
+    marginHorizontal: 16,
+    marginBottom: 14,
+    borderRadius: 14,
+    padding: 14,
+    backgroundColor: "#1d2230",
+    borderWidth: 1,
+    borderColor: "#2d3345",
+  },
+  statsHeading: {
+    color: "#f4f6f8",
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 10,
+  },
+  statGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 14,
+  },
+  statBox: {
+    width: "48%",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    backgroundColor: "#252c3c",
+    borderWidth: 1,
+    borderColor: "#2f374c",
+  },
+  statValue: {
+    color: "#ffffff",
+    fontSize: 20,
+    fontWeight: "800",
+  },
+  statLabel: {
+    color: "#9ba6bf",
+    fontSize: 12,
+    marginTop: 3,
+  },
+  chartHeading: {
+    color: "#c9d3eb",
+    fontSize: 13,
+    fontWeight: "700",
+    marginBottom: 10,
+  },
+  chartWrap: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    gap: 8,
+  },
+  chartColumn: {
+    flex: 1,
+    alignItems: "center",
+  },
+  chartTrack: {
+    width: "100%",
+    maxWidth: 34,
+    height: 78,
+    borderRadius: 8,
+    backgroundColor: "#30384d",
+    justifyContent: "flex-end",
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#3b455f",
+  },
+  chartBar: {
+    width: "100%",
+    backgroundColor: "#80a3ff",
+  },
+  chartLabel: {
+    marginTop: 6,
+    color: "#a9b0bf",
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  loadingWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    marginBottom: 14,
+  },
+  loadingText: {
+    color: "#c0c7d8",
+  },
+  errorText: {
+    color: "#ff8b8b",
+    paddingHorizontal: 16,
+    marginBottom: 10,
   },
   section: {
     marginBottom: 22,
@@ -100,15 +331,37 @@ const styles = StyleSheet.create({
     width: 126,
     marginLeft: 16,
   },
+  emptyCard: {
+    width: 190,
+    marginLeft: 16,
+    height: 184,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#2f3542",
+    backgroundColor: "#242832",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+  },
+  emptyCardText: {
+    color: "#9ba6bf",
+    fontSize: 13,
+    textAlign: "center",
+  },
   poster: {
     height: 184,
     borderRadius: 10,
+    overflow: "hidden",
     backgroundColor: "#242832",
     borderWidth: 1,
     borderColor: "#2f3542",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 8,
+  },
+  posterImage: {
+    width: "100%",
+    height: "100%",
   },
   posterLabel: {
     color: "#8f99ad",
