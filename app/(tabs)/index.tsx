@@ -31,6 +31,8 @@ type UserStats = {
   playing: number;
   reviewed: number;
   backlog: number;
+  wishlist: number;
+  lists: number;
 };
 
 const USER_STATS: UserStats = {
@@ -38,6 +40,8 @@ const USER_STATS: UserStats = {
   playing: 6,
   reviewed: 52,
   backlog: 73,
+  wishlist: 41,
+  lists: 12,
 };
 
 const SECTIONS: Section[] = [
@@ -88,7 +92,7 @@ export default function Index() {
       <Text style={styles.heroTitle}>Hello [player]</Text>
 
       <View style={styles.statsCard}>
-        <Text style={styles.statsHeading}>Your Snapshot</Text>
+        <Text style={styles.statsHeading}>Profile stats</Text>
 
         <View style={styles.statGrid}>
           <View style={styles.statBox}>
@@ -107,6 +111,14 @@ export default function Index() {
             <Text style={styles.statValue}>{USER_STATS.backlog}</Text>
             <Text style={styles.statLabel}>Backlog</Text>
           </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statValue}>{USER_STATS.wishlist}</Text>
+            <Text style={styles.statLabel}>Wishlist</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statValue}>{USER_STATS.lists}</Text>
+            <Text style={styles.statLabel}>Lists</Text>
+          </View>
         </View>
       </View>
 
@@ -120,6 +132,8 @@ export default function Index() {
       {errorMessage ? (
         <Text style={styles.errorText}>{errorMessage}</Text>
       ) : null}
+
+      <View style={styles.sectionDivider} />
 
       {!isLoading &&
         sections.map((section) => (
@@ -181,9 +195,6 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     borderRadius: 14,
     padding: 14,
-    backgroundColor: "#1d2230",
-    borderWidth: 1,
-    borderColor: "#2d3345",
   },
   statsHeading: {
     color: "#f4f6f8",
@@ -198,13 +209,10 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   statBox: {
-    width: "48%",
+    width: "30%",
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 10,
-    backgroundColor: "#252c3c",
-    borderWidth: 1,
-    borderColor: "#2f374c",
   },
   statValue: {
     color: "#ffffff",
@@ -230,6 +238,13 @@ const styles = StyleSheet.create({
     color: "#ff8b8b",
     paddingHorizontal: 16,
     marginBottom: 10,
+  },
+  sectionDivider: {
+    height: 1,
+    marginHorizontal: 16,
+    marginBottom: 14,
+    backgroundColor: "#ffffff",
+    opacity: 0.5,
   },
   section: {
     marginBottom: 22,
