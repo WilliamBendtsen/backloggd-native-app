@@ -33,27 +33,12 @@ type UserStats = {
   backlog: number;
 };
 
-type RatingBucket = {
-  label: string;
-  value: number;
-};
-
-const USER_PLACEHOLDER = "Player";
-
 const USER_STATS: UserStats = {
   played: 128,
   playing: 6,
   reviewed: 52,
   backlog: 73,
 };
-
-const RATING_BUCKETS: RatingBucket[] = [
-  { label: "1★", value: 4 },
-  { label: "2★", value: 9 },
-  { label: "3★", value: 28 },
-  { label: "4★", value: 40 },
-  { label: "5★", value: 19 },
-];
 
 const SECTIONS: Section[] = [
   {
@@ -100,14 +85,7 @@ export default function Index() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
-      <View style={styles.heroCard}>
-        <Text style={styles.heroTitle}>
-          Hello {USER_PLACEHOLDER}, your collection awaits...
-        </Text>
-        <Text style={styles.heroSubtitle}>
-          Pick up where you left off and keep your backlog moving.
-        </Text>
-      </View>
+      <Text style={styles.heroTitle}>Hello [player]</Text>
 
       <View style={styles.statsCard}>
         <Text style={styles.statsHeading}>Your Snapshot</Text>
@@ -129,20 +107,6 @@ export default function Index() {
             <Text style={styles.statValue}>{USER_STATS.backlog}</Text>
             <Text style={styles.statLabel}>Backlog</Text>
           </View>
-        </View>
-
-        <Text style={styles.chartHeading}>Ratings Distribution</Text>
-        <View style={styles.chartWrap}>
-          {RATING_BUCKETS.map((bucket) => (
-            <View key={bucket.label} style={styles.chartColumn}>
-              <View style={styles.chartTrack}>
-                <View
-                  style={[styles.chartBar, { height: `${bucket.value}%` }]}
-                />
-              </View>
-              <Text style={styles.chartLabel}>{bucket.label}</Text>
-            </View>
-          ))}
         </View>
       </View>
 
@@ -204,25 +168,13 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingBottom: 26,
   },
-  heroCard: {
-    marginHorizontal: 16,
-    marginBottom: 12,
-    borderRadius: 14,
-    padding: 14,
-    backgroundColor: "#1f2f4a",
-    borderWidth: 1,
-    borderColor: "#2d456d",
-  },
   heroTitle: {
-    color: "#f4f7ff",
-    fontSize: 19,
-    fontWeight: "800",
-    marginBottom: 6,
-  },
-  heroSubtitle: {
-    color: "#b8c4dc",
-    fontSize: 13,
-    lineHeight: 18,
+    color: "#d5def0",
+    fontSize: 30,
+    fontWeight: "900",
+    marginHorizontal: 16,
+    marginBottom: 16,
+    textAlign: "center",
   },
   statsCard: {
     marginHorizontal: 16,
@@ -263,43 +215,6 @@ const styles = StyleSheet.create({
     color: "#9ba6bf",
     fontSize: 12,
     marginTop: 3,
-  },
-  chartHeading: {
-    color: "#c9d3eb",
-    fontSize: 13,
-    fontWeight: "700",
-    marginBottom: 10,
-  },
-  chartWrap: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    gap: 8,
-  },
-  chartColumn: {
-    flex: 1,
-    alignItems: "center",
-  },
-  chartTrack: {
-    width: "100%",
-    maxWidth: 34,
-    height: 78,
-    borderRadius: 8,
-    backgroundColor: "#30384d",
-    justifyContent: "flex-end",
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "#3b455f",
-  },
-  chartBar: {
-    width: "100%",
-    backgroundColor: "#80a3ff",
-  },
-  chartLabel: {
-    marginTop: 6,
-    color: "#a9b0bf",
-    fontSize: 11,
-    fontWeight: "600",
   },
   loadingWrap: {
     flexDirection: "row",
