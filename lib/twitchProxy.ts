@@ -30,7 +30,7 @@ export async function searchTwitchGames(query: string): Promise<TwitchGame[]> {
     },
   );
 
-  const status = (error as { context?: Response }).context?.status;
+  const status = (error as { context?: Response } | null)?.context?.status;
   if (
     error &&
     status === 404 &&
