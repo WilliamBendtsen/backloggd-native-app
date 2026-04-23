@@ -31,14 +31,27 @@ export async function searchTwitchGames(query: string): Promise<TwitchGame[]> {
   }
 
   /* Then we use some built in supabase function to invoke the api call? */
-  const { data, error } = await supabase.functions.invoke<TwitchProxyResponse>(
+  let { data, error } = await supabase.functions.invoke<TwitchProxyResponse>(
     twitchProxyFunction,
     {
       body: { query: trimmed },
     },
   );
 
-  /* Then some error handling on the api call */
+  const status = (error as { context?: Response } | null)?.context?.status;
+  if (error && status === 404 && twitchProxyFunction !== twitchProxyFunction) {
+    const fallbackResponse =
+      await supabase.functions.invoke<TwitchProxyResponse>(
+        twitchProxyFunction,
+        {
+          body: { query: trimmed },
+        },
+      );
+
+    data = fallbackResponse.data;
+    error = fallbackResponse.error;
+  }
+
   if (error) {
     const fallbackMessage = error.message || "Twitch proxy request failed";
     const context = (error as { context?: Response }).context;
