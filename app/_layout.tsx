@@ -44,6 +44,15 @@ function RootLayoutNav() {
     <Stack>
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="game"
+        options={{
+          headerShown: true,
+          headerTitle: "Game",
+          headerStyle: { backgroundColor: "#242832" },
+          headerTintColor: "#ffffff",
+        }}
+      />
     </Stack>
   );
 }

@@ -1,29 +1,25 @@
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 
-import { searchTwitchGames } from "../../lib/twitchProxy";
+import { searchTwitchGames, type TwitchGame } from "../../lib/twitchProxy";
 
 type Section = {
   title: string;
   query: string;
 };
 
-type GameCard = {
-  id?: number | string;
-  name?: string;
-  coverUrl?: string;
-};
-
 type LoadedSection = {
   title: string;
-  items: GameCard[];
+  items: TwitchGame[];
 };
 
 type UserStats = {
@@ -52,9 +48,26 @@ const SECTIONS: Section[] = [
 ];
 
 export default function Index() {
+  const router = useRouter();
   const [sections, setSections] = useState<LoadedSection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  function openGameDetails(game: TwitchGame) {
+    router.push({
+      pathname: "/game",
+      params: {
+        id: String(game.id ?? ""),
+        name: game.name ?? "Untitled",
+        coverUrl: game.coverUrl ?? "",
+        genreName: game.genreName ?? "Unknown genre",
+        releaseDate: game.releaseDate ?? "Unknown release date",
+        publisherName: game.publisherName ?? "Unknown publisher",
+        developerName: game.developerName ?? "Unknown developer",
+        platformName: game.platformName ?? "Unknown platform",
+      },
+    });
+  }
 
   useEffect(() => {
     async function loadSections() {
@@ -146,9 +159,10 @@ export default function Index() {
                 </View>
               ) : (
                 section.items.map((item) => (
-                  <View
+                  <Pressable
                     key={`${section.title}-${item.id ?? item.name}`}
                     style={styles.card}
+                    onPress={() => openGameDetails(item)}
                   >
                     <View style={styles.poster}>
                       {item.coverUrl ? (
@@ -163,7 +177,7 @@ export default function Index() {
                     <Text numberOfLines={2} style={styles.cardTitle}>
                       {item.name ?? "Untitled"}
                     </Text>
-                  </View>
+                  </Pressable>
                 ))
               )}
             </ScrollView>

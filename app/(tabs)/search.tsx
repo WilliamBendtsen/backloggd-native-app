@@ -1,7 +1,9 @@
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,18 +11,7 @@ import {
   View,
 } from "react-native";
 
-import { searchTwitchGames } from "../../lib/twitchProxy";
-
-type TwitchGame = {
-  id?: number | string;
-  name?: string;
-  coverUrl?: string;
-  genreName?: string;
-  releaseDate?: string;
-  publisherName?: string;
-  developerName?: string;
-  platformName?: string;
-};
+import { searchTwitchGames, type TwitchGame } from "../../lib/twitchProxy";
 
 function truncateText(value?: string, maxLength = 30, fallback = "Unknown") {
   if (!value || !value.trim()) {
@@ -49,10 +40,27 @@ function firstListItem(value?: string) {
 }
 
 export default function Index() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<TwitchGame[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  function openGameDetails(game: TwitchGame) {
+    router.push({
+      pathname: "/game",
+      params: {
+        id: String(game.id ?? ""),
+        name: game.name ?? "Untitled",
+        coverUrl: game.coverUrl ?? "",
+        genreName: game.genreName ?? "Unknown genre",
+        releaseDate: game.releaseDate ?? "Unknown release date",
+        publisherName: game.publisherName ?? "Unknown publisher",
+        developerName: game.developerName ?? "Unknown developer",
+        platformName: game.platformName ?? "Unknown platform",
+      },
+    });
+  }
 
   async function handleSearch() {
     setIsLoading(true);
@@ -94,7 +102,11 @@ export default function Index() {
       ) : null}
 
       {results.map((game) => (
-        <View key={String(game.id ?? game.name)} style={styles.resultCard}>
+        <Pressable
+          key={String(game.id ?? game.name)}
+          style={styles.resultCard}
+          onPress={() => openGameDetails(game)}
+        >
           <Image style={styles.coverImage} source={{ uri: game.coverUrl }} />
 
           <View style={styles.resultTextColumn}>
@@ -131,7 +143,7 @@ export default function Index() {
               {game.platformName ?? "Unknown platform"}
             </Text>
           </View>
-        </View>
+        </Pressable>
       ))}
     </ScrollView>
   );
