@@ -1,4 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as ImagePicker from "expo-image-picker";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -20,20 +22,34 @@ export default function Index() {
   const { signOut, backloggdUsername } = useAuth();
   const [backloggdUser, setBackloggdUser] =
     useState<BackloggdUserContent | null>(null);
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const avatarStorageKey = backloggdUsername
+    ? `profile-avatar:${backloggdUsername}`
+    : null;
 
   useEffect(() => {
     async function loadProfile() {
       if (!backloggdUsername) {
         setBackloggdUser(null);
+        setAvatarUri(null);
         return;
       }
 
       setLoadingProfile(true);
       setError(null);
       try {
+        const savedAvatarUri = avatarStorageKey
+          ? await AsyncStorage.getItem(avatarStorageKey)
+          : null;
+
+        if (savedAvatarUri) {
+          setAvatarUri(savedAvatarUri);
+        }
+
         const user = await fetchBackloggdUser(backloggdUsername);
         setBackloggdUser(user);
       } catch (e: any) {
@@ -44,7 +60,35 @@ export default function Index() {
     }
 
     loadProfile();
-  }, [backloggdUsername]);
+  }, [avatarStorageKey, backloggdUsername]);
+
+  const pickAvatarImage = async () => {
+    if (!avatarStorageKey) {
+      return;
+    }
+
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      setError("Photo library access is required to choose an avatar.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.9,
+    });
+
+    if (result.canceled || !result.assets[0]?.uri) {
+      return;
+    }
+
+    const nextAvatarUri = result.assets[0].uri;
+    setAvatarUri(nextAvatarUri);
+    await AsyncStorage.setItem(avatarStorageKey, nextAvatarUri);
+  };
 
   const onSignOut = async () => {
     setError(null);
@@ -80,9 +124,31 @@ export default function Index() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.card}>
-        <Text style={styles.sectionValue}>
-          {backloggdUser?.username ?? backloggdUsername ?? "Not set"}
-        </Text>
+        <View style={styles.headerRow}>
+          <View style={styles.headerText}>
+            <Text style={styles.sectionValue}>
+              {backloggdUser?.username ?? backloggdUsername ?? "Not set"}
+            </Text>
+          </View>
+
+          <Pressable
+            onPress={pickAvatarImage}
+            accessibilityRole="button"
+            accessibilityLabel="Choose profile picture"
+            style={({ pressed }) => [
+              styles.avatarButton,
+              pressed && styles.avatarButtonPressed,
+            ]}
+          >
+            {avatarUri ? (
+              <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+            ) : (
+              <View style={styles.avatarEmptyState}>
+                <Ionicons name="camera" size={24} color="#d7deef" />
+              </View>
+            )}
+          </Pressable>
+        </View>
 
         <Text style={styles.sectionLabel}>Bio</Text>
         <Text style={styles.bioValue}>
@@ -190,8 +256,41 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "800",
   },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  headerText: {
+    flex: 1,
+  },
   muted: {
     color: "#9ca3af",
+  },
+  avatarButton: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 1,
+    borderColor: "#2f3542",
+    backgroundColor: "#1d222c",
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarButtonPressed: {
+    opacity: 0.85,
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
+  },
+  avatarEmptyState: {
+    flex: 1,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
   },
   sectionLabel: {
     color: "#cbd5e1",
