@@ -10,6 +10,11 @@ import {
   View,
 } from "react-native";
 
+import { useAuth } from "../../lib/auth";
+import {
+  fetchBackloggdUser,
+  type BackloggdUserContent,
+} from "../../lib/backloggdApi";
 import { searchTwitchGames, type TwitchGame } from "../../lib/twitchProxy";
 
 type Section = {
@@ -22,24 +27,6 @@ type LoadedSection = {
   items: TwitchGame[];
 };
 
-type UserStats = {
-  played: number;
-  playing: number;
-  reviewed: number;
-  backlog: number;
-  wishlist: number;
-  lists: number;
-};
-
-const USER_STATS: UserStats = {
-  played: 128,
-  playing: 6,
-  reviewed: 52,
-  backlog: 73,
-  wishlist: 41,
-  lists: 12,
-};
-
 const SECTIONS: Section[] = [
   {
     title: "Recently Trending",
@@ -49,7 +36,10 @@ const SECTIONS: Section[] = [
 
 export default function Index() {
   const router = useRouter();
+  const { backloggdUsername } = useAuth();
   const [sections, setSections] = useState<LoadedSection[]>([]);
+  const [backloggdUser, setBackloggdUser] =
+    useState<BackloggdUserContent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -70,22 +60,28 @@ export default function Index() {
   }
 
   useEffect(() => {
-    async function loadSections() {
+    async function loadSectionsAndProfile() {
       setIsLoading(true);
       setErrorMessage(null);
 
       try {
-        const loaded = await Promise.all(
-          SECTIONS.map(async (section) => {
-            const items = await searchTwitchGames(section.query);
-            return {
-              title: section.title,
-              items: items.slice(0, 10),
-            };
-          }),
-        );
+        const [loaded, user] = await Promise.all([
+          Promise.all(
+            SECTIONS.map(async (section) => {
+              const items = await searchTwitchGames(section.query);
+              return {
+                title: section.title,
+                items: items.slice(0, 10),
+              };
+            }),
+          ),
+          backloggdUsername
+            ? fetchBackloggdUser(backloggdUsername)
+            : Promise.resolve(null),
+        ]);
 
         setSections(loaded);
+        setBackloggdUser(user);
       } catch (error) {
         const message =
           error instanceof Error
@@ -97,42 +93,61 @@ export default function Index() {
       }
     }
 
-    loadSections();
-  }, []);
+    loadSectionsAndProfile();
+  }, [backloggdUsername]);
+
+  const stats = backloggdUser?.stats;
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
-      <Text style={styles.heroTitle}>Hello [player]</Text>
+      <Text style={styles.heroTitle}>
+        Hello {backloggdUser?.username ?? backloggdUsername ?? "player"}
+      </Text>
 
       <View style={styles.statsCard}>
         <Text style={styles.statsHeading}>Profile stats</Text>
 
         <View style={styles.statGrid}>
           <View style={styles.statBox}>
-            <Text style={styles.statValue}>{USER_STATS.played}</Text>
+            <Text style={styles.statValue}>{stats?.played ?? 0}</Text>
             <Text style={styles.statLabel}>Played</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statValue}>{USER_STATS.playing}</Text>
-            <Text style={styles.statLabel}>Playing</Text>
+            <Text style={styles.statValue}>{stats?.playedIn2026 ?? 0}</Text>
+            <Text style={styles.statLabel}>Played in 2026</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statValue}>{USER_STATS.reviewed}</Text>
-            <Text style={styles.statLabel}>Reviewed</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>{USER_STATS.backlog}</Text>
+            <Text style={styles.statValue}>{stats?.backlog ?? 0}</Text>
             <Text style={styles.statLabel}>Backlog</Text>
           </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>{USER_STATS.wishlist}</Text>
-            <Text style={styles.statLabel}>Wishlist</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>{USER_STATS.lists}</Text>
-            <Text style={styles.statLabel}>Lists</Text>
-          </View>
         </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Recently reviewed</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {!backloggdUser?.recentlyReviewed?.length ? (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyCardText}>No reviews yet</Text>
+            </View>
+          ) : (
+            backloggdUser.recentlyReviewed.map((item) => (
+              <View key={`review-${item.name}`} style={styles.reviewCard}>
+                <Image
+                  source={{ uri: item.image }}
+                  style={styles.reviewImage}
+                />
+                <Text numberOfLines={2} style={styles.cardTitle}>
+                  {item.name}
+                </Text>
+                <Text style={styles.reviewMeta}>Rating: {item.rating}</Text>
+                <Text numberOfLines={4} style={styles.reviewText}>
+                  {item.review}
+                </Text>
+              </View>
+            ))
+          )}
+        </ScrollView>
       </View>
 
       {isLoading && (
@@ -209,6 +224,9 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     borderRadius: 14,
     padding: 14,
+    borderWidth: 1,
+    borderColor: "#2f3542",
+    backgroundColor: "#242832",
   },
   statsHeading: {
     color: "#f4f6f8",
@@ -218,15 +236,14 @@ const styles = StyleSheet.create({
   },
   statGrid: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 8,
-    marginBottom: 14,
   },
   statBox: {
-    width: "30%",
+    flex: 1,
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 10,
+    backgroundColor: "#1d222c",
   },
   statValue: {
     color: "#ffffff",
@@ -274,6 +291,32 @@ const styles = StyleSheet.create({
   card: {
     width: 126,
     marginLeft: 16,
+  },
+  reviewCard: {
+    width: 220,
+    marginLeft: 16,
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#2f3542",
+    backgroundColor: "#242832",
+  },
+  reviewImage: {
+    width: "100%",
+    height: 110,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  reviewMeta: {
+    color: "#9ba6bf",
+    fontSize: 12,
+    marginTop: 2,
+    marginBottom: 6,
+  },
+  reviewText: {
+    color: "#d7deef",
+    fontSize: 12,
+    lineHeight: 16,
   },
   emptyCard: {
     width: 190,

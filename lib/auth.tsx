@@ -12,11 +12,18 @@ import { supabase } from "./supabase";
 type AuthContextValue = {
   loading: boolean;
   session: Session | null;
+  backloggdUsername: string | null;
   signInWithPassword: (args: {
     email: string;
     password: string;
+    username: string;
   }) => Promise<void>;
-  signUp: (args: { email: string; password: string }) => Promise<void>;
+  signUp: (args: {
+    email: string;
+    password: string;
+    username: string;
+  }) => Promise<void>;
+  setBackloggdUsername: (username: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -55,30 +62,67 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  const backloggdUsername =
+    (session?.user?.user_metadata?.backloggdUsername as string | undefined) ??
+    (session?.user?.user_metadata?.username as string | undefined) ??
+    null;
+
   const value = useMemo<AuthContextValue>(
     () => ({
       loading,
       session,
-      signInWithPassword: async ({ email, password }) => {
+      backloggdUsername,
+      signInWithPassword: async ({ email, password, username }) => {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
+
+        const trimmedUsername = username.trim();
+        if (trimmedUsername) {
+          const { error: updateError } = await supabase.auth.updateUser({
+            data: { backloggdUsername: trimmedUsername },
+          });
+          if (updateError) throw updateError;
+
+          const { data: refreshed, error: refreshError } =
+            await supabase.auth.getSession();
+          if (refreshError) throw refreshError;
+          setSession(refreshed.session ?? null);
+        }
       },
-      signUp: async ({ email, password }) => {
+      signUp: async ({ email, password, username }) => {
         const { error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              backloggdUsername: username.trim(),
+            },
+          },
         });
         if (error) throw error;
+      },
+      setBackloggdUsername: async (username) => {
+        const trimmedUsername = username.trim();
+        const { error } = await supabase.auth.updateUser({
+          data: {
+            backloggdUsername: trimmedUsername,
+          },
+        });
+        if (error) throw error;
+
+        const { data, error: refreshError } = await supabase.auth.getSession();
+        if (refreshError) throw refreshError;
+        setSession(data.session ?? null);
       },
       signOut: async () => {
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
       },
     }),
-    [loading, session],
+    [backloggdUsername, loading, session],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -18,6 +18,7 @@ export default function SignUpScreen() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -27,7 +28,11 @@ export default function SignUpScreen() {
     setSuccess(null);
     setSubmitting(true);
     try {
-      await signUp({ email: email.trim(), password });
+      await signUp({
+        email: email.trim(),
+        password,
+        username: username.trim(),
+      });
       setSuccess(
         "Account created. If email confirmations are enabled, check your inbox to confirm your address.",
       );
@@ -46,6 +51,19 @@ export default function SignUpScreen() {
       <View style={styles.card}>
         <Text style={styles.title}>Create account</Text>
         <Text style={styles.subtitle}>Start tracking your backlog.</Text>
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Backloggd username</Text>
+          <TextInput
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholder="your-backloggd-user"
+            placeholderTextColor="#6b7280"
+            style={styles.input}
+          />
+        </View>
 
         <View style={styles.field}>
           <Text style={styles.label}>Email</Text>
@@ -80,10 +98,18 @@ export default function SignUpScreen() {
 
         <Pressable
           onPress={onSignUp}
-          disabled={submitting || !email.trim() || password.length < 6}
+          disabled={
+            submitting ||
+            !username.trim() ||
+            !email.trim() ||
+            password.length < 6
+          }
           style={({ pressed }) => [
             styles.button,
-            (submitting || !email.trim() || password.length < 6) &&
+            (submitting ||
+              !username.trim() ||
+              !email.trim() ||
+              password.length < 6) &&
               styles.buttonDisabled,
             pressed && !submitting && styles.buttonPressed,
           ]}
@@ -186,4 +212,3 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 });
-

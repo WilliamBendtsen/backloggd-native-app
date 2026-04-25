@@ -18,6 +18,7 @@ export default function SignInScreen() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +26,11 @@ export default function SignInScreen() {
     setError(null);
     setSubmitting(true);
     try {
-      await signInWithPassword({ email: email.trim(), password });
+      await signInWithPassword({
+        email: email.trim(),
+        password,
+        username: username.trim(),
+      });
     } catch (e: any) {
       setError(e?.message ?? "Sign-in failed.");
     } finally {
@@ -40,7 +45,22 @@ export default function SignInScreen() {
     >
       <View style={styles.card}>
         <Text style={styles.title}>Sign in</Text>
-        <Text style={styles.subtitle}>Welcome back.</Text>
+        <Text style={styles.subtitle}>
+          Welcome back{username.trim() ? `, ${username.trim()}` : ""}.
+        </Text>
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Backloggd username</Text>
+          <TextInput
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholder="your-backloggd-user"
+            placeholderTextColor="#6b7280"
+            style={styles.input}
+          />
+        </View>
 
         <View style={styles.field}>
           <Text style={styles.label}>Email</Text>
@@ -74,10 +94,13 @@ export default function SignInScreen() {
 
         <Pressable
           onPress={onSignIn}
-          disabled={submitting || !email.trim() || !password}
+          disabled={
+            submitting || !username.trim() || !email.trim() || !password
+          }
           style={({ pressed }) => [
             styles.button,
-            (submitting || !email.trim() || !password) && styles.buttonDisabled,
+            (submitting || !username.trim() || !email.trim() || !password) &&
+              styles.buttonDisabled,
             pressed && !submitting && styles.buttonPressed,
           ]}
         >
@@ -175,4 +198,3 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 });
-
