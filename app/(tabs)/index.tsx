@@ -29,7 +29,7 @@ type LoadedSection = {
 
 const SECTIONS: Section[] = [
   {
-    title: "Recently Trending",
+    title: "Trending Games",
     query: "feed:trending",
   },
 ];
@@ -105,12 +105,10 @@ export default function Index() {
       </Text>
 
       <View style={styles.statsCard}>
-        <Text style={styles.statsHeading}>Profile stats</Text>
-
         <View style={styles.statGrid}>
           <View style={styles.statBox}>
             <Text style={styles.statValue}>{stats?.played ?? 0}</Text>
-            <Text style={styles.statLabel}>Played</Text>
+            <Text style={styles.statLabel}>Games Played</Text>
           </View>
           <View style={styles.statBox}>
             <Text style={styles.statValue}>{stats?.playedIn2026 ?? 0}</Text>
@@ -121,33 +119,6 @@ export default function Index() {
             <Text style={styles.statLabel}>Backlog</Text>
           </View>
         </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recently reviewed</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {!backloggdUser?.recentlyReviewed?.length ? (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyCardText}>No reviews yet</Text>
-            </View>
-          ) : (
-            backloggdUser.recentlyReviewed.map((item) => (
-              <View key={`review-${item.name}`} style={styles.reviewCard}>
-                <Image
-                  source={{ uri: item.image }}
-                  style={styles.reviewImage}
-                />
-                <Text numberOfLines={2} style={styles.cardTitle}>
-                  {item.name}
-                </Text>
-                <Text style={styles.reviewMeta}>Rating: {item.rating}</Text>
-                <Text numberOfLines={4} style={styles.reviewText}>
-                  {item.review}
-                </Text>
-              </View>
-            ))
-          )}
-        </ScrollView>
       </View>
 
       {isLoading && (
@@ -300,23 +271,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#2f3542",
     backgroundColor: "#242832",
-  },
-  reviewImage: {
-    width: "100%",
-    height: 110,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  reviewMeta: {
-    color: "#9ba6bf",
-    fontSize: 12,
-    marginTop: 2,
-    marginBottom: 6,
-  },
-  reviewText: {
-    color: "#d7deef",
-    fontSize: 12,
-    lineHeight: 16,
   },
   emptyCard: {
     width: 190,

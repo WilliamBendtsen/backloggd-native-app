@@ -1,3 +1,4 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -57,6 +58,25 @@ export default function Index() {
     }
   };
 
+  function renderStars(rating: number) {
+    const roundedRating = Math.max(1, Math.min(5, Math.round(rating)));
+
+    return Array.from({ length: 5 }, (_, index) => {
+      const starNumber = index + 1;
+      const iconName = starNumber <= roundedRating ? "star" : "star-outline";
+
+      return (
+        <Ionicons
+          key={`star-${starNumber}`}
+          name={iconName}
+          size={14}
+          color="#f5c84c"
+          style={styles.starIcon}
+        />
+      );
+    });
+  }
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.card}>
@@ -91,6 +111,35 @@ export default function Index() {
                 <Text numberOfLines={2} style={styles.gameName}>
                   {game.name}
                 </Text>
+              </View>
+            ))
+          )}
+        </ScrollView>
+
+        <Text style={styles.sectionLabel}>Recently played</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {!backloggdUser?.recentlyReviewed?.length ? (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyCardText}>No reviews yet</Text>
+            </View>
+          ) : (
+            backloggdUser.recentlyReviewed.map((item) => (
+              <View key={`review-${item.name}`} style={styles.reviewCard}>
+                <View style={styles.reviewImageWrap}>
+                  <Image
+                    source={{ uri: item.image }}
+                    style={styles.reviewImage}
+                    resizeMode="contain"
+                  />
+                </View>
+                <Text numberOfLines={2} style={styles.reviewTitle}>
+                  {item.name}
+                </Text>
+                <View style={styles.ratingRow}>{renderStars(item.rating)}</View>
+                <View style={styles.reviewFooter}>
+                  <Text style={styles.reviewLink}>See review</Text>
+                  <Ionicons name="chevron-forward" size={16} color="#d7deef" />
+                </View>
               </View>
             ))
           )}
@@ -155,8 +204,8 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     color: "#cbd5e1",
-    fontSize: 13,
-    fontWeight: "700",
+    fontSize: 20,
+    fontWeight: "800",
     marginTop: 8,
   },
   sectionValue: {
@@ -184,6 +233,60 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 12,
     lineHeight: 16,
+  },
+  reviewCard: {
+    width: 220,
+    marginTop: 8,
+    marginRight: 10,
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#2f3542",
+    backgroundColor: "#242832",
+  },
+  reviewImageWrap: {
+    height: 220,
+    borderRadius: 8,
+    backgroundColor: "#1d222c",
+    borderWidth: 1,
+    borderColor: "#2f3542",
+    overflow: "hidden",
+    marginBottom: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  reviewImage: {
+    width: "100%",
+    height: "100%",
+  },
+  reviewTitle: {
+    color: "#fff",
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: "600",
+    paddingRight: 6,
+  },
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 2,
+    marginBottom: 10,
+  },
+  starIcon: {
+    marginRight: 2,
+  },
+  reviewFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#2f3542",
+  },
+  reviewLink: {
+    color: "#d7deef",
+    fontSize: 13,
+    fontWeight: "700",
   },
   emptyCard: {
     marginTop: 8,
