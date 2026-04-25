@@ -1,6 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -17,8 +18,10 @@ import {
   fetchBackloggdUser,
   type BackloggdUserContent,
 } from "../../lib/backloggdApi";
+import { searchTwitchGames, type TwitchGame } from "../../lib/twitchProxy";
 
 export default function Index() {
+  const router = useRouter();
   const { signOut, backloggdUsername } = useAuth();
   const [backloggdUser, setBackloggdUser] =
     useState<BackloggdUserContent | null>(null);
@@ -121,6 +124,65 @@ export default function Index() {
     });
   }
 
+  function normalizeName(value: string) {
+    return value.trim().toLowerCase();
+  }
+
+  function pickBestMatch(name: string, candidates: TwitchGame[]) {
+    const target = normalizeName(name);
+
+    const exact = candidates.find(
+      (candidate) => normalizeName(candidate.name ?? "") === target,
+    );
+    if (exact) {
+      return exact;
+    }
+
+    const partial = candidates.find((candidate) =>
+      normalizeName(candidate.name ?? "").includes(target),
+    );
+    if (partial) {
+      return partial;
+    }
+
+    return candidates[0];
+  }
+
+  async function openFavoriteGame(name: string, fallbackImage: string) {
+    try {
+      const searchResults = await searchTwitchGames(name);
+      const matched = pickBestMatch(name, searchResults);
+
+      router.push({
+        pathname: "/game",
+        params: {
+          id: String(matched?.id ?? name),
+          name: matched?.name ?? name,
+          coverUrl: matched?.coverUrl ?? fallbackImage,
+          genreName: matched?.genreName ?? "Unknown genre",
+          releaseDate: matched?.releaseDate ?? "Unknown release date",
+          publisherName: matched?.publisherName ?? "Unknown publisher",
+          developerName: matched?.developerName ?? "Unknown developer",
+          platformName: matched?.platformName ?? "Unknown platform",
+        },
+      });
+    } catch {
+      router.push({
+        pathname: "/game",
+        params: {
+          id: name,
+          name,
+          coverUrl: fallbackImage,
+          genreName: "Unknown genre",
+          releaseDate: "Unknown release date",
+          publisherName: "Unknown publisher",
+          developerName: "Unknown developer",
+          platformName: "Unknown platform",
+        },
+      });
+    }
+  }
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.card}>
@@ -163,12 +225,19 @@ export default function Index() {
             </View>
           ) : (
             backloggdUser.favoriteGames.map((game) => (
-              <View key={`favorite-${game.name}`} style={styles.gameCard}>
+              <Pressable
+                key={`favorite-${game.name}`}
+                onPress={() => openFavoriteGame(game.name, game.image)}
+                style={({ pressed }) => [
+                  styles.gameCard,
+                  pressed && styles.gameCardPressed,
+                ]}
+              >
                 <Image source={{ uri: game.image }} style={styles.gameImage} />
                 <Text numberOfLines={2} style={styles.gameName}>
                   {game.name}
                 </Text>
-              </View>
+              </Pressable>
             ))
           )}
         </ScrollView>
@@ -310,6 +379,9 @@ const styles = StyleSheet.create({
     width: 120,
     marginTop: 8,
     marginRight: 10,
+  },
+  gameCardPressed: {
+    opacity: 0.85,
   },
   gameImage: {
     width: "100%",
