@@ -43,12 +43,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="activity"
+        name="reviews"
         options={{
-          title: "Activity",
+          title: "Reviews",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
-              name={focused ? "flash" : "flash-outline"}
+              name={focused ? "podium" : "podium-outline"}
               color={color}
               size={24}
             />

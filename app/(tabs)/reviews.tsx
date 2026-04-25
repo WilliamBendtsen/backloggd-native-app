@@ -1,9 +1,9 @@
 import { StyleSheet, Text, View } from "react-native";
 
-export default function Index() {
+export default function ReviewsScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Activity screen</Text>
+      <Text style={styles.text}>Reviews screen</Text>
     </View>
   );
 }
