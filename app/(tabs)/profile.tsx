@@ -17,7 +17,7 @@ import {
 } from "../../lib/backloggdApi";
 
 export default function Index() {
-  const { session, signOut, backloggdUsername } = useAuth();
+  const { signOut, backloggdUsername } = useAuth();
   const [backloggdUser, setBackloggdUser] =
     useState<BackloggdUserContent | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -80,15 +80,6 @@ export default function Index() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.card}>
-        <Text style={styles.title}>Profile</Text>
-        <Text style={styles.muted}>
-          Signed in as{" "}
-          <Text style={styles.mono}>
-            {session?.user?.email ?? session?.user?.id ?? "Unknown"}
-          </Text>
-        </Text>
-
-        <Text style={styles.sectionLabel}>Username</Text>
         <Text style={styles.sectionValue}>
           {backloggdUser?.username ?? backloggdUsername ?? "Not set"}
         </Text>
@@ -210,7 +201,7 @@ const styles = StyleSheet.create({
   },
   sectionValue: {
     color: "#ffffff",
-    fontSize: 15,
+    fontSize: 30,
   },
   bioValue: {
     color: "#e5e7eb",
