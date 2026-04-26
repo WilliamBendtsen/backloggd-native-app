@@ -3,6 +3,8 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -148,136 +150,146 @@ export default function CreateScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.formCard}>
-        <Text style={styles.heading}>Create review</Text>
-        <Text style={styles.subheading}>
-          Search for a game, pick a star rating, and write your review.
-        </Text>
-
-        <Text style={styles.label}>Search game</Text>
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          onSubmitEditing={handleSearch}
-          placeholder="Search games..."
-          placeholderTextColor="#77829c"
-          style={styles.input}
-        />
-
-        <Pressable
-          onPress={handleSearch}
-          disabled={!query.trim() || searching}
-          style={({ pressed }) => [
-            styles.searchButton,
-            (!query.trim() || searching || pressed) && styles.buttonPressed,
-          ]}
-        >
-          <Text style={styles.searchButtonText}>
-            {searching ? "Searching..." : "Find game"}
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+    >
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.formCard}>
+          <Text style={styles.heading}>Create review</Text>
+          <Text style={styles.subheading}>
+            Search for a game, pick a star rating, and write your review.
           </Text>
-        </Pressable>
 
-        {searching ? (
-          <View style={styles.statusRow}>
-            <ActivityIndicator color="#80a3ff" />
-            <Text style={styles.statusText}>Searching games...</Text>
-          </View>
-        ) : null}
+          <Text style={styles.label}>Search game</Text>
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            onSubmitEditing={handleSearch}
+            placeholder="Search games..."
+            placeholderTextColor="#77829c"
+            style={styles.input}
+          />
 
-        {form.gameName ? (
-          <View style={styles.selectedGameCard}>
-            {form.coverUrl ? (
-              <Image
-                source={{ uri: form.coverUrl }}
-                style={styles.selectedGameImage}
-              />
-            ) : (
-              <View style={styles.selectedGameFallback}>
-                <Text style={styles.coverFallbackText}>No cover</Text>
-              </View>
-            )}
-
-            <View style={styles.selectedGameText}>
-              <Text style={styles.selectedGameLabel}>Selected game</Text>
-              <Text style={styles.selectedGameTitle}>{form.gameName}</Text>
-            </View>
-          </View>
-        ) : null}
-
-        {results.length > 0 ? (
-          <View style={styles.searchResults}>
-            {results.slice(0, 5).map((game) => (
-              <Pressable
-                key={String(game.id ?? game.name)}
-                onPress={() => selectGame(game)}
-                style={({ pressed }) => [
-                  styles.resultCard,
-                  pressed && styles.buttonPressed,
-                ]}
-              >
-                {game.coverUrl ? (
-                  <Image
-                    source={{ uri: game.coverUrl }}
-                    style={styles.resultImage}
-                  />
-                ) : (
-                  <View style={styles.resultFallback}>
-                    <Text style={styles.coverFallbackText}>No cover</Text>
-                  </View>
-                )}
-
-                <View style={styles.resultTextColumn}>
-                  <Text style={styles.resultTitle}>
-                    {game.name ?? "Untitled"}
-                  </Text>
-                  <Text style={styles.resultMeta}>
-                    {(game.releaseDate ?? "").slice(0, 4) || "Unknown year"}
-                  </Text>
-                  <Text style={styles.resultMeta} numberOfLines={1}>
-                    {game.genreName ?? "Unknown genre"}
-                  </Text>
-                </View>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
-
-        <Text style={styles.label}>Rating</Text>
-        {renderStarPicker()}
-
-        <Text style={styles.label}>Review</Text>
-        <TextInput
-          value={form.body}
-          onChangeText={(value) => updateField("body", value)}
-          placeholder="Write your thoughts here..."
-          placeholderTextColor="#77829c"
-          multiline
-          textAlignVertical="top"
-          style={[styles.input, styles.textarea]}
-        />
-
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        {successMessage ? (
-          <Text style={styles.successText}>{successMessage}</Text>
-        ) : null}
-
-        <View style={styles.formActions}>
           <Pressable
-            onPress={onSubmit}
-            disabled={submitting}
+            onPress={handleSearch}
+            disabled={!query.trim() || searching}
             style={({ pressed }) => [
-              styles.primaryButton,
-              (pressed || submitting) && styles.buttonPressed,
+              styles.searchButton,
+              (!query.trim() || searching || pressed) && styles.buttonPressed,
             ]}
           >
-            <Text style={styles.primaryButtonText}>
-              {submitting ? "Saving..." : "Create review"}
+            <Text style={styles.searchButtonText}>
+              {searching ? "Searching..." : "Find game"}
             </Text>
           </Pressable>
+
+          {searching ? (
+            <View style={styles.statusRow}>
+              <ActivityIndicator color="#80a3ff" />
+              <Text style={styles.statusText}>Searching games...</Text>
+            </View>
+          ) : null}
+
+          {form.gameName ? (
+            <View style={styles.selectedGameCard}>
+              {form.coverUrl ? (
+                <Image
+                  source={{ uri: form.coverUrl }}
+                  style={styles.selectedGameImage}
+                />
+              ) : (
+                <View style={styles.selectedGameFallback}>
+                  <Text style={styles.coverFallbackText}>No cover</Text>
+                </View>
+              )}
+
+              <View style={styles.selectedGameText}>
+                <Text style={styles.selectedGameLabel}>Selected game</Text>
+                <Text style={styles.selectedGameTitle}>{form.gameName}</Text>
+              </View>
+            </View>
+          ) : null}
+
+          {results.length > 0 ? (
+            <View style={styles.searchResults}>
+              {results.slice(0, 5).map((game) => (
+                <Pressable
+                  key={String(game.id ?? game.name)}
+                  onPress={() => selectGame(game)}
+                  style={({ pressed }) => [
+                    styles.resultCard,
+                    pressed && styles.buttonPressed,
+                  ]}
+                >
+                  {game.coverUrl ? (
+                    <Image
+                      source={{ uri: game.coverUrl }}
+                      style={styles.resultImage}
+                    />
+                  ) : (
+                    <View style={styles.resultFallback}>
+                      <Text style={styles.coverFallbackText}>No cover</Text>
+                    </View>
+                  )}
+
+                  <View style={styles.resultTextColumn}>
+                    <Text style={styles.resultTitle}>
+                      {game.name ?? "Untitled"}
+                    </Text>
+                    <Text style={styles.resultMeta}>
+                      {(game.releaseDate ?? "").slice(0, 4) || "Unknown year"}
+                    </Text>
+                    <Text style={styles.resultMeta} numberOfLines={1}>
+                      {game.genreName ?? "Unknown genre"}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
+
+          <Text style={styles.label}>Rating</Text>
+          {renderStarPicker()}
+
+          <Text style={styles.label}>Review</Text>
+          <TextInput
+            value={form.body}
+            onChangeText={(value) => updateField("body", value)}
+            placeholder="Write your thoughts here..."
+            placeholderTextColor="#77829c"
+            multiline
+            textAlignVertical="top"
+            style={[styles.input, styles.textarea]}
+          />
+
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          {successMessage ? (
+            <Text style={styles.successText}>{successMessage}</Text>
+          ) : null}
+
+          <View style={styles.formActions}>
+            <Pressable
+              onPress={onSubmit}
+              disabled={submitting}
+              style={({ pressed }) => [
+                styles.primaryButton,
+                (pressed || submitting) && styles.buttonPressed,
+              ]}
+            >
+              <Text style={styles.primaryButtonText}>
+                {submitting ? "Saving..." : "Create review"}
+              </Text>
+            </Pressable>
+          </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
