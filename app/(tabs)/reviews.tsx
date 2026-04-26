@@ -120,17 +120,6 @@ export default function ReviewsScreen() {
                     {backloggdUsername ?? "Unknown user"}
                   </Text>
                 </View>
-
-                {review.cover_url ? (
-                  <Image
-                    source={{ uri: review.cover_url }}
-                    style={styles.coverImage}
-                  />
-                ) : (
-                  <View style={styles.coverFallback}>
-                    <Text style={styles.coverFallbackText}>No cover</Text>
-                  </View>
-                )}
               </View>
 
               <Text style={styles.reviewTitle}>{review.game_name}</Text>
@@ -145,6 +134,17 @@ export default function ReviewsScreen() {
                 <Ionicons name="heart" size={14} color="#ff8b8b" />
                 <Text style={styles.likesText}>{review.likes}</Text>
               </View>
+
+              {review.cover_url ? (
+                <Image
+                  source={{ uri: review.cover_url }}
+                  style={styles.coverImage}
+                />
+              ) : (
+                <View style={styles.coverFallback}>
+                  <Text style={styles.coverFallbackText}>No cover</Text>
+                </View>
+              )}
 
               <Text style={styles.reviewMeta}>
                 Created {new Date(review.updated_at).toLocaleString()}
@@ -217,7 +217,6 @@ const styles = StyleSheet.create({
   },
   reviewTopRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     gap: 12,
   },
   reviewerIdentity: {
@@ -280,10 +279,13 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
   coverImage: {
-    width: 76,
-    height: 100,
+    width: 90,
+    height: 130,
     borderRadius: 10,
     backgroundColor: "#1a1d24",
+    position: "absolute",
+    right: 30,
+    top: 50,
   },
   coverFallback: {
     width: 76,
