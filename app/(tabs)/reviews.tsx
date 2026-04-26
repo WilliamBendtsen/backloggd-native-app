@@ -17,20 +17,12 @@ import {
   type ReviewRow,
 } from "../../lib/reviews";
 
-function truncateBody(value: string, maxLength = 220) {
-  if (value.length <= maxLength) {
-    return value;
-  }
-
-  return `${value.slice(0, maxLength - 1)}...`;
-}
-
 export default function ReviewsScreen() {
   const { session, backloggdUsername } = useAuth();
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
-  const [authorNamesById, setAuthorNamesById] = useState<Record<string, string>>(
-    {},
-  );
+  const [authorNamesById, setAuthorNamesById] = useState<
+    Record<string, string>
+  >({});
   const [authorAvatarsById, setAuthorAvatarsById] = useState<
     Record<string, string | null>
   >({});
@@ -136,7 +128,9 @@ export default function ReviewsScreen() {
                   <View style={styles.avatarWrap}>
                     {authorAvatarsById[review.user_id] ? (
                       <Image
-                        source={{ uri: authorAvatarsById[review.user_id] as string }}
+                        source={{
+                          uri: authorAvatarsById[review.user_id] as string,
+                        }}
                         style={styles.avatarImage}
                       />
                     ) : (
@@ -153,8 +147,12 @@ export default function ReviewsScreen() {
 
               <View style={styles.ratingRow}>{renderStars(review.rating)}</View>
 
-              <Text style={styles.reviewBody} numberOfLines={6}>
-                {truncateBody(review.body)}
+              <Text
+                style={styles.reviewBody}
+                numberOfLines={3}
+                ellipsizeMode="tail"
+              >
+                {review.body}
               </Text>
 
               <View style={styles.likesRow}>
@@ -304,6 +302,8 @@ const styles = StyleSheet.create({
     color: "#e4e9f3",
     fontSize: 14,
     lineHeight: 21,
+    minHeight: 84,
+    maxWidth: 200,
   },
   coverImage: {
     width: 90,
