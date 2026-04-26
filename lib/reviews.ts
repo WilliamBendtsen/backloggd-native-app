@@ -13,6 +13,12 @@ export type ReviewRow = {
   body: string;
 };
 
+export type ProfileRow = {
+  id: string;
+  username: string;
+  display_name: string | null;
+};
+
 export type ReviewInput = {
   rating: number;
   gameId: string;
@@ -36,6 +42,38 @@ export async function listUserReviews(userId: string) {
   }
 
   return (data ?? []) as ReviewRow[];
+}
+
+export async function listAllReviews() {
+  const { data, error } = await supabase
+    .from("reviews")
+    .select(REVIEW_SELECT)
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as ReviewRow[];
+}
+
+export async function listProfilesByIds(userIds: string[]) {
+  const uniqueIds = Array.from(new Set(userIds.filter(Boolean)));
+
+  if (uniqueIds.length === 0) {
+    return [] as ProfileRow[];
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, username, display_name")
+    .in("id", uniqueIds);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as ProfileRow[];
 }
 
 export async function createReview(userId: string, input: ReviewInput) {

@@ -11,7 +11,11 @@ import {
 } from "react-native";
 
 import { useAuth } from "../../lib/auth";
-import { listUserReviews, type ReviewRow } from "../../lib/reviews";
+import {
+  listAllReviews,
+  listProfilesByIds,
+  type ReviewRow,
+} from "../../lib/reviews";
 
 function truncateBody(value: string, maxLength = 220) {
   if (value.length <= maxLength) {
@@ -24,6 +28,9 @@ function truncateBody(value: string, maxLength = 220) {
 export default function ReviewsScreen() {
   const { session, backloggdUsername } = useAuth();
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
+  const [authorNamesById, setAuthorNamesById] = useState<Record<string, string>>(
+    {},
+  );
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,8 +58,19 @@ export default function ReviewsScreen() {
 
         setAvatarUri(savedAvatarUri);
 
-        const nextReviews = await listUserReviews(userId);
+        const nextReviews = await listAllReviews();
+        const profiles = await listProfilesByIds(
+          nextReviews.map((review) => review.user_id),
+        );
+        const nextAuthorNamesById = Object.fromEntries(
+          profiles.map((profile) => [
+            profile.id,
+            profile.display_name?.trim() || profile.username,
+          ]),
+        );
+
         setReviews(nextReviews);
+        setAuthorNamesById(nextAuthorNamesById);
       } catch (e: any) {
         setError(e?.message ?? "Failed to load reviews.");
       } finally {
@@ -82,6 +100,16 @@ export default function ReviewsScreen() {
     });
   }
 
+  function formatAuthor(review: ReviewRow) {
+    if (review.user_id === session?.user?.id) {
+      return authorNamesById[review.user_id] ?? backloggdUsername ?? "You";
+    }
+
+    return (
+      authorNamesById[review.user_id] ?? `User ${review.user_id.slice(0, 8)}`
+    );
+  }
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.heading}>Reviews</Text>
@@ -107,7 +135,7 @@ export default function ReviewsScreen() {
               <View style={styles.reviewTopRow}>
                 <View style={styles.reviewerIdentity}>
                   <View style={styles.avatarWrap}>
-                    {avatarUri ? (
+                    {review.user_id === session?.user?.id && avatarUri ? (
                       <Image
                         source={{ uri: avatarUri }}
                         style={styles.avatarImage}
@@ -117,7 +145,7 @@ export default function ReviewsScreen() {
                     )}
                   </View>
                   <Text style={styles.usernameText} numberOfLines={1}>
-                    {backloggdUsername ?? "Unknown user"}
+                    {formatAuthor(review)}
                   </Text>
                 </View>
               </View>
