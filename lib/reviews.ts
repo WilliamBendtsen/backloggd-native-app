@@ -1,4 +1,8 @@
 import { supabase } from "./supabase";
+import {
+  listProfilesByIds as fetchProfilesByIds,
+  type ProfileRow,
+} from "./profiles";
 
 export type ReviewRow = {
   id: string;
@@ -11,12 +15,6 @@ export type ReviewRow = {
   game_name: string;
   cover_url: string | null;
   body: string;
-};
-
-export type ProfileRow = {
-  id: string;
-  username: string;
-  display_name: string | null;
 };
 
 export type ReviewInput = {
@@ -58,22 +56,7 @@ export async function listAllReviews() {
 }
 
 export async function listProfilesByIds(userIds: string[]) {
-  const uniqueIds = Array.from(new Set(userIds.filter(Boolean)));
-
-  if (uniqueIds.length === 0) {
-    return [] as ProfileRow[];
-  }
-
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id, username, display_name")
-    .in("id", uniqueIds);
-
-  if (error) {
-    throw error;
-  }
-
-  return (data ?? []) as ProfileRow[];
+  return fetchProfilesByIds(userIds);
 }
 
 export async function createReview(userId: string, input: ReviewInput) {

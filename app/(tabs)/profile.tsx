@@ -1,10 +1,10 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -18,25 +18,25 @@ import {
   fetchBackloggdUser,
   type BackloggdUserContent,
 } from "../../lib/backloggdApi";
+import { getAvatarPublicUrl, getProfile, uploadAvatar } from "../../lib/profiles";
 import { searchTwitchGames, type TwitchGame } from "../../lib/twitchProxy";
 
 export default function Index() {
   const router = useRouter();
-  const { signOut, backloggdUsername } = useAuth();
+  const { signOut, backloggdUsername, session } = useAuth();
   const [backloggdUser, setBackloggdUser] =
     useState<BackloggdUserContent | null>(null);
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const avatarStorageKey = backloggdUsername
-    ? `profile-avatar:${backloggdUsername}`
-    : null;
 
   useEffect(() => {
     async function loadProfile() {
-      if (!backloggdUsername) {
+      const userId = session?.user?.id;
+
+      if (!backloggdUsername || !userId) {
         setBackloggdUser(null);
         setAvatarUri(null);
         return;
@@ -45,15 +45,12 @@ export default function Index() {
       setLoadingProfile(true);
       setError(null);
       try {
-        const savedAvatarUri = avatarStorageKey
-          ? await AsyncStorage.getItem(avatarStorageKey)
-          : null;
+        const [user, profile] = await Promise.all([
+          fetchBackloggdUser(backloggdUsername),
+          getProfile(userId),
+        ]);
 
-        if (savedAvatarUri) {
-          setAvatarUri(savedAvatarUri);
-        }
-
-        const user = await fetchBackloggdUser(backloggdUsername);
+        setAvatarUri(getAvatarPublicUrl(profile?.avatar_path ?? null));
         setBackloggdUser(user);
       } catch (e: any) {
         setError(e?.message ?? "Failed to load profile data.");
@@ -63,10 +60,12 @@ export default function Index() {
     }
 
     loadProfile();
-  }, [avatarStorageKey, backloggdUsername]);
+  }, [backloggdUsername, session?.user?.id]);
 
   const pickAvatarImage = async () => {
-    if (!avatarStorageKey) {
+    const userId = session?.user?.id;
+
+    if (!userId) {
       return;
     }
 
@@ -81,6 +80,7 @@ export default function Index() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
+      base64: true,
       quality: 0.9,
     });
 
@@ -88,9 +88,30 @@ export default function Index() {
       return;
     }
 
-    const nextAvatarUri = result.assets[0].uri;
-    setAvatarUri(nextAvatarUri);
-    await AsyncStorage.setItem(avatarStorageKey, nextAvatarUri);
+    setUploadingAvatar(true);
+    setError(null);
+
+    try {
+      const asset = result.assets[0];
+      if (!asset.base64) {
+        throw new Error("Image data could not be prepared for upload.");
+      }
+
+      const uploaded = await uploadAvatar({
+        userId,
+        uri: asset.uri,
+        base64: asset.base64,
+        mimeType: asset.mimeType,
+      });
+
+      setAvatarUri(uploaded.publicUrl);
+    } catch (e: any) {
+      const message = e?.message ?? "Failed to upload avatar.";
+      setError(message);
+      Alert.alert("Avatar upload failed", message);
+    } finally {
+      setUploadingAvatar(false);
+    }
   };
 
   const onSignOut = async () => {
@@ -197,9 +218,10 @@ export default function Index() {
             onPress={pickAvatarImage}
             accessibilityRole="button"
             accessibilityLabel="Choose profile picture"
+            disabled={uploadingAvatar}
             style={({ pressed }) => [
               styles.avatarButton,
-              pressed && styles.avatarButtonPressed,
+              (pressed || uploadingAvatar) && styles.avatarButtonPressed,
             ]}
           >
             {avatarUri ? (
@@ -275,6 +297,13 @@ export default function Index() {
           <View style={styles.loadingRow}>
             <ActivityIndicator color="#ffffff" />
             <Text style={styles.muted}>Loading profile data...</Text>
+          </View>
+        ) : null}
+
+        {uploadingAvatar ? (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator color="#ffffff" />
+            <Text style={styles.muted}>Uploading avatar...</Text>
           </View>
         ) : null}
 

@@ -1,5 +1,4 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -11,6 +10,7 @@ import {
 } from "react-native";
 
 import { useAuth } from "../../lib/auth";
+import { getAvatarPublicUrl } from "../../lib/profiles";
 import {
   listAllReviews,
   listProfilesByIds,
@@ -31,13 +31,11 @@ export default function ReviewsScreen() {
   const [authorNamesById, setAuthorNamesById] = useState<Record<string, string>>(
     {},
   );
-  const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [authorAvatarsById, setAuthorAvatarsById] = useState<
+    Record<string, string | null>
+  >({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const avatarStorageKey = backloggdUsername
-    ? `profile-avatar:${backloggdUsername}`
-    : null;
 
   useEffect(() => {
     async function loadReviews() {
@@ -52,12 +50,6 @@ export default function ReviewsScreen() {
       setLoading(true);
       setError(null);
       try {
-        const savedAvatarUri = avatarStorageKey
-          ? await AsyncStorage.getItem(avatarStorageKey)
-          : null;
-
-        setAvatarUri(savedAvatarUri);
-
         const nextReviews = await listAllReviews();
         const profiles = await listProfilesByIds(
           nextReviews.map((review) => review.user_id),
@@ -68,9 +60,16 @@ export default function ReviewsScreen() {
             profile.display_name?.trim() || profile.username,
           ]),
         );
+        const nextAuthorAvatarsById = Object.fromEntries(
+          profiles.map((profile) => [
+            profile.id,
+            getAvatarPublicUrl(profile.avatar_path),
+          ]),
+        );
 
         setReviews(nextReviews);
         setAuthorNamesById(nextAuthorNamesById);
+        setAuthorAvatarsById(nextAuthorAvatarsById);
       } catch (e: any) {
         setError(e?.message ?? "Failed to load reviews.");
       } finally {
@@ -79,7 +78,7 @@ export default function ReviewsScreen() {
     }
 
     loadReviews();
-  }, [avatarStorageKey, session?.user?.id]);
+  }, [session?.user?.id]);
 
   function renderStars(rating: number) {
     const roundedRating = Math.max(1, Math.min(5, Math.round(rating)));
@@ -135,9 +134,9 @@ export default function ReviewsScreen() {
               <View style={styles.reviewTopRow}>
                 <View style={styles.reviewerIdentity}>
                   <View style={styles.avatarWrap}>
-                    {review.user_id === session?.user?.id && avatarUri ? (
+                    {authorAvatarsById[review.user_id] ? (
                       <Image
-                        source={{ uri: avatarUri }}
+                        source={{ uri: authorAvatarsById[review.user_id] as string }}
                         style={styles.avatarImage}
                       />
                     ) : (
