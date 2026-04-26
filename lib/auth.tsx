@@ -16,7 +16,6 @@ type AuthContextValue = {
   signInWithPassword: (args: {
     email: string;
     password: string;
-    username: string;
   }) => Promise<void>;
   signUp: (args: {
     email: string;
@@ -72,25 +71,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       session,
       backloggdUsername,
-      signInWithPassword: async ({ email, password, username }) => {
+      signInWithPassword: async ({ email, password }) => {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
-
-        const trimmedUsername = username.trim();
-        if (trimmedUsername) {
-          const { error: updateError } = await supabase.auth.updateUser({
-            data: { backloggdUsername: trimmedUsername },
-          });
-          if (updateError) throw updateError;
-
-          const { data: refreshed, error: refreshError } =
-            await supabase.auth.getSession();
-          if (refreshError) throw refreshError;
-          setSession(refreshed.session ?? null);
-        }
       },
       signUp: async ({ email, password, username }) => {
         const { error } = await supabase.auth.signUp({
