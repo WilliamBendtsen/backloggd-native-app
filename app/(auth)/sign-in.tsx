@@ -43,7 +43,6 @@ export default function SignInScreen() {
     >
       <View style={styles.card}>
         <Text style={styles.title}>Sign in</Text>
-        <Text style={styles.subtitle}>Sign in with your email and password.</Text>
 
         <View style={styles.field}>
           <Text style={styles.label}>Email</Text>
@@ -53,8 +52,6 @@ export default function SignInScreen() {
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="email-address"
-            placeholder="you@example.com"
-            placeholderTextColor="#6b7280"
             style={styles.input}
           />
         </View>
@@ -67,8 +64,6 @@ export default function SignInScreen() {
             autoCapitalize="none"
             autoCorrect={false}
             secureTextEntry
-            placeholder="••••••••"
-            placeholderTextColor="#6b7280"
             style={styles.input}
           />
         </View>
@@ -123,10 +118,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "800",
     letterSpacing: -0.5,
-  },
-  subtitle: {
-    color: "#9ca3af",
-    marginBottom: 6,
   },
   field: {
     gap: 6,

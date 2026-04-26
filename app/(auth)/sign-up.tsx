@@ -50,17 +50,14 @@ export default function SignUpScreen() {
     >
       <View style={styles.card}>
         <Text style={styles.title}>Create account</Text>
-        <Text style={styles.subtitle}>Start tracking your backlog.</Text>
 
         <View style={styles.field}>
-          <Text style={styles.label}>Backloggd username</Text>
+          <Text style={styles.label}>Username</Text>
           <TextInput
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
             autoCorrect={false}
-            placeholder="your-backloggd-user"
-            placeholderTextColor="#6b7280"
             style={styles.input}
           />
         </View>
@@ -73,8 +70,6 @@ export default function SignUpScreen() {
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="email-address"
-            placeholder="you@example.com"
-            placeholderTextColor="#6b7280"
             style={styles.input}
           />
         </View>
@@ -87,8 +82,6 @@ export default function SignUpScreen() {
             autoCapitalize="none"
             autoCorrect={false}
             secureTextEntry
-            placeholder="At least 6 characters"
-            placeholderTextColor="#6b7280"
             style={styles.input}
           />
         </View>
@@ -153,10 +146,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "800",
     letterSpacing: -0.5,
-  },
-  subtitle: {
-    color: "#9ca3af",
-    marginBottom: 6,
   },
   field: {
     gap: 6,
