@@ -18,14 +18,19 @@ import {
   fetchBackloggdUser,
   type BackloggdUserContent,
 } from "../../lib/backloggdApi";
-import { getAvatarPublicUrl, getProfile, uploadAvatar } from "../../lib/profiles";
+import {
+  getAvatarPublicUrl,
+  getProfile,
+  uploadAvatar,
+} from "../../lib/profiles";
 import { searchTwitchGames, type TwitchGame } from "../../lib/twitchProxy";
 
 export default function Index() {
   const router = useRouter();
-  const { signOut, backloggdUsername, session } = useAuth();
+  const { signOut, session } = useAuth();
   const [backloggdUser, setBackloggdUser] =
     useState<BackloggdUserContent | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(null);
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(false);
@@ -36,8 +41,9 @@ export default function Index() {
     async function loadProfile() {
       const userId = session?.user?.id;
 
-      if (!backloggdUsername || !userId) {
+      if (!userId) {
         setBackloggdUser(null);
+        setDisplayName(null);
         setAvatarUri(null);
         return;
       }
@@ -45,13 +51,22 @@ export default function Index() {
       setLoadingProfile(true);
       setError(null);
       try {
-        const [user, profile] = await Promise.all([
-          fetchBackloggdUser(backloggdUsername),
-          getProfile(userId),
-        ]);
+        const profile = await getProfile(userId);
 
+        setDisplayName(profile?.display_name?.trim() ?? null);
         setAvatarUri(getAvatarPublicUrl(profile?.avatar_path ?? null));
-        setBackloggdUser(user);
+
+        if (!profile?.display_name?.trim()) {
+          setBackloggdUser(null);
+          return;
+        }
+
+        try {
+          const user = await fetchBackloggdUser(profile.display_name.trim());
+          setBackloggdUser(user);
+        } catch {
+          setBackloggdUser(null);
+        }
       } catch (e: any) {
         setError(e?.message ?? "Failed to load profile data.");
       } finally {
@@ -60,7 +75,7 @@ export default function Index() {
     }
 
     loadProfile();
-  }, [backloggdUsername, session?.user?.id]);
+  }, [session?.user?.id]);
 
   const pickAvatarImage = async () => {
     const userId = session?.user?.id;
@@ -209,9 +224,7 @@ export default function Index() {
       <View style={styles.card}>
         <View style={styles.headerRow}>
           <View style={styles.headerText}>
-            <Text style={styles.sectionValue}>
-              {backloggdUser?.username ?? backloggdUsername ?? "Not set"}
-            </Text>
+            <Text style={styles.sectionValue}>{displayName ?? "Not set"}</Text>
           </View>
 
           <Pressable
