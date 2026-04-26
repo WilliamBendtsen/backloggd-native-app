@@ -156,39 +156,35 @@ export default function ReviewsScreen() {
   }
 
   function confirmDelete(review: ReviewRow) {
-    Alert.alert(
-      "Delete review",
-      "This action cannot be undone.",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            setDeletingReviewId(review.id);
-            setError(null);
+    Alert.alert("Delete review", "This action cannot be undone.", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          setDeletingReviewId(review.id);
+          setError(null);
 
-            try {
-              await deleteReview(review.id);
-              setReviews((previous) =>
-                previous.filter((item) => item.id !== review.id),
-              );
+          try {
+            await deleteReview(review.id);
+            setReviews((previous) =>
+              previous.filter((item) => item.id !== review.id),
+            );
 
-              if (editingReviewId === review.id) {
-                cancelEdit();
-              }
-            } catch (e: any) {
-              setError(e?.message ?? "Failed to delete review.");
-            } finally {
-              setDeletingReviewId(null);
+            if (editingReviewId === review.id) {
+              cancelEdit();
             }
-          },
+          } catch (e: any) {
+            setError(e?.message ?? "Failed to delete review.");
+          } finally {
+            setDeletingReviewId(null);
+          }
         },
-      ],
-    );
+      },
+    ]);
   }
 
   return (
@@ -271,7 +267,9 @@ export default function ReviewsScreen() {
                 <View style={styles.reviewMainColumn}>
                   <Text style={styles.reviewTitle}>{review.game_name}</Text>
 
-                  <View style={styles.ratingRow}>{renderStars(review.rating)}</View>
+                  <View style={styles.ratingRow}>
+                    {renderStars(review.rating)}
+                  </View>
 
                   {editingReviewId === review.id ? (
                     <View style={styles.editorWrap}>
@@ -346,7 +344,9 @@ export default function ReviewsScreen() {
                           {savingReviewId === review.id ? (
                             <ActivityIndicator size="small" color="#0b0e12" />
                           ) : (
-                            <Text style={styles.editorSaveText}>Save changes</Text>
+                            <Text style={styles.editorSaveText}>
+                              Save changes
+                            </Text>
                           )}
                         </Pressable>
                       </View>
